@@ -437,7 +437,7 @@
   <div class="input-row">
     <label>主题</label>
     <input type="text" placeholder="请输入视频主题">
-    <button class="import-btn">生成主题</button>
+    <button class="gen-btn" onclick="generateTheme()">生成主题</button>
   </div>
   <div class="input-row">
     <label>参考链接
@@ -448,12 +448,59 @@
   <div class="input-row">
     <label>Brief Story</label>
     <textarea rows="3" placeholder="自动生成或导入Brief Story"></textarea>
-    <button class="gen-btn">生成 Story</button>
+    <button class="gen-btn" onclick="generateBriefStory()">生成 Story</button>
   </div>
   <button class="main-btn" onclick="showPage('storyboard')">下一步：生成StoryBoard</button>
 </div>
 
-<!-- 页面3：选择/生成图像 -->
+<!-- 页面3：生成StoryBoard -->
+<div id="storyboard" class="section" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2>生成StoryBoard</h2>
+    <button class="import-btn" onclick="importStoryboard()">导入StoryBoard</button>
+  </div>
+  <div class="input-row">
+    <label>品牌Story</label>
+    <textarea id="brandStory" rows="6" style="font-size:1.08rem;width:100%;">2026世界杯期间，时尚女孩身着潮流衣装，在赛场边精心喷上雅诗兰黛香水，那迷人芬芳瞬间飘散。赛后她走进赛场周边咖啡馆休息，活力男孩也因对足球的热爱踏入这里。女孩身上雅诗兰黛香水的独特气息吸引了男孩，两人因足球话题相谈甚欢。香水的芬芳在空气中弥漫，仿佛为这段相遇增添了浪漫滤镜。此后，他们的爱情如世界杯的热情般炽热甜蜜，雅诗兰黛香水见证了这段美好缘分。</textarea>
+    <button class="gen-btn" onclick="generateStoryboard()">生成StoryBoard</button>
+  </div>
+  <div id="storyboardProgress" style="display:none;margin:32px 0;">
+    <div style="width:100%;background:#f0f0f0;border-radius:8px;overflow:hidden;">
+      <div id="progressBar" style="width:0%;height:16px;background:linear-gradient(90deg,#6a82fb,#fc5c7d);transition:width 0.5s;"></div>
+    </div>
+    <div style="margin-top:8px;color:#6a82fb;">正在生成StoryBoard...</div>
+  </div>
+  <div id="storyboardResult" style="display:none;">
+    <div style="font-weight:600;margin:32px 0 8px 0;">故事场景</div>
+    <div style="display:flex;gap:18px;margin-bottom:8px;width:100%;">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+        <img src="img/场景1.jpeg" style="width:100%;height:120px;object-fit:cover;border-radius:12px;background:#e0e7ff;cursor:pointer;" onclick="showImgPreview(this)">
+        <div style="margin-top:6px;color:#6a82fb;font-weight:500;">场景1</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+        <img src="img/场景2.jpeg" style="width:100%;height:120px;object-fit:cover;border-radius:12px;background:#e0e7ff;cursor:pointer;" onclick="showImgPreview(this)">
+        <div style="margin-top:6px;color:#6a82fb;font-weight:500;">场景2</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+        <img src="img/场景3.jpeg" style="width:100%;height:120px;object-fit:cover;border-radius:12px;background:#e0e7ff;cursor:pointer;" onclick="showImgPreview(this)">
+        <div style="margin-top:6px;color:#6a82fb;font-weight:500;">场景3</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+        <img src="img/场景4.jpeg" style="width:100%;height:120px;object-fit:cover;border-radius:12px;background:#e0e7ff;cursor:pointer;" onclick="showImgPreview(this)">
+        <div style="margin-top:6px;color:#6a82fb;font-weight:500;">场景4</div>
+      </div>
+    </div>
+    <div style="font-weight:600;margin:32px 0 8px 0;">分镜剧情</div>
+    <div id="shotsList"></div>
+  </div>
+  <button class="main-btn" style="margin-top:32px;" onclick="showPage('material')">下一步：生成图像</button>
+  <!-- 大图预览弹窗 -->
+  <div id="imgPreviewModal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <img id="imgPreview" src="" style="max-width:80vw;max-height:80vh;border-radius:16px;box-shadow:0 8px 32px #0008;">
+  </div>
+</div>
+
+<!-- 页面4：选择/生成图像 -->
 <div id="material" class="section" style="display:none;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
     <div style="font-size:24px;font-weight:600;">选择/生成图像</div>
@@ -513,6 +560,86 @@
       <!-- 这里动态填充图片或占位框 -->
     </div>
   </div>
+</div>
+
+<!-- 页面5：生成Clip短片 -->
+<div id="clip" class="section" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+    <div style="font-size:24px;font-weight:600;">生成Clip短片</div>
+    <button onclick="showPage('material')" style="padding:8px 16px;background:#6a82fb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;">返回</button>
+  </div>
+  <!-- 镜头选择条 -->
+  <div style="position:relative;margin-bottom:32px;display:flex;justify-content:center;">
+    <button onclick="scrollClipShots('left')" style="position:absolute;left:0;top:50%;transform:translateY(-50%);background:#6a82fb;color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:22px;z-index:2;">&lt;</button>
+    <div id="clipShotsContainer" style="width:1104px;max-width:100vw;overflow:hidden;position:relative;padding:16px 0;">
+      <div id="clipShotsInner" style="display:flex;gap:24px;transition:transform 0.3s;will-change:transform;">
+        <div class="clip-shot-thumb" data-index="0" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/1-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头1</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="1" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/2-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头2</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="2" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/3-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头3</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="3" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/4-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头4</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="4" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/5-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头5</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="5" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/6-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头6</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="6" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/7-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头7</span>
+        </div>
+      </div>
+    </div>
+    <button onclick="scrollClipShots('right')" style="position:absolute;right:0;top:50%;transform:translateY(-50%);background:#6a82fb;color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:22px;z-index:2;">&gt;</button>
+  </div>
+  <!-- 参考图+提示词左右布局 -->
+  <div style="display:flex;justify-content:center;align-items:flex-start;gap:48px;margin-bottom:32px;">
+    <div style="display:flex;flex-direction:column;align-items:center;width:400px;">
+      <div style="align-self:flex-start;font-weight:600;font-size:1.08rem;color:#6a82fb;margin-bottom:8px;">参考图</div>
+      <div id="clipRefImgBox" style="width:400px;height:260px;background:#e0e7ff;border-radius:18px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+        <img id="clipRefImg" src="img/shot1-1.jpeg" style="width:100%;height:100%;object-fit:contain;border-radius:18px;">
+      </div>
+    </div>
+    <div style="flex:1;min-width:260px;max-width:420px;">
+      <div style="font-weight:600;margin-bottom:16px;">提示词</div>
+      <div id="clipPromptText" style="width:100%;min-height:60px;max-height:600px;padding:16px;border:1.5px solid #e5e7eb;border-radius:10px;font-family:inherit;font-size:1.08rem;line-height:1.7;background:#fff;box-sizing:border-box;white-space:pre-wrap;word-break:break-all;"></div>
+    </div>
+  </div>
+  <!-- 生成Clip按钮和进度条 -->
+  <div style="margin-bottom:32px;">
+    <button id="genClipBtn" style="width:100%;padding:12px;background:#6a82fb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;" onclick="generateClipVideos()">生成Clip</button>
+    <button id="uploadClipBtn" style="width:100%;padding:12px;background:#f3f4f6;color:#6a82fb;border:none;border-radius:8px;cursor:pointer;font-weight:500;margin-top:12px;">上传Clip</button>
+    <button id="clipSubmitBtn" style="width:100%;padding:12px;background:#6a82fb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;margin-top:12px;">提交</button>
+    <div id="clipProgressBar" style="width:100%;height:4px;background:#e0e7ff;border-radius:2px;margin-top:16px;display:none;">
+      <div id="clipProgressFill" style="width:0%;height:100%;background:#6a82fb;border-radius:2px;transition:width 2s;"></div>
+    </div>
+  </div>
+  <!-- 生成的Clip视频 -->
+  <div id="generatedClips" style="display:none;margin-bottom:32px;">
+    <div style="font-weight:600;margin-bottom:16px;">生成的Clip</div>
+    <div id="clipGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+      <!-- 动态填充clip视频占位图 -->
+    </div>
+  </div>
+</div>
+
+<!-- 页面6：视频合成 -->
+<div id="compose" class="section" style="display:none;min-height:400px;display:flex;align-items:center;justify-content:center;">
+  <div style="width:100%;text-align:center;font-size:2.2rem;color:#6a82fb;font-weight:700;letter-spacing:2px;">敬请期待</div>
+</div>
   <script>
     // 全局变量声明
     let lastImgToolbar = null;
@@ -526,7 +653,6 @@
     // 全局函数定义
     function showPage(page) {
       console.log('Switching to page:', page);
-      
       // 隐藏所有页面
       ['home', 'brief', 'material', 'storyboard', 'clip', 'compose'].forEach(function(id) {
         const element = document.getElementById(id);
@@ -542,13 +668,14 @@
           console.log('Element not found:', id);
         }
       });
-      
       // 更新导航高亮
       document.querySelectorAll('.nav a').forEach(function(a) {
         const isActive = a.getAttribute('href') === '#' + page;
         a.classList.toggle('active', isActive);
         console.log('Nav link:', a.getAttribute('href'), 'active:', isActive);
       });
+      // 保证 hash 与页面同步
+      location.hash = '#' + page;
     }
 
     // 页面初始化
@@ -589,6 +716,57 @@
       '男孩和女孩手牵手走出咖啡馆，街道两旁的花朵在雨后显得格外娇艳。他们漫步在街道上，脸上都洋溢着幸福的笑容。雅诗兰黛香水的味道在他们身边萦绕，仿佛是他们爱情的见证。阳光洒在他们身上，形成了一幅美丽的画面。',
       '画面中，男孩和女孩的身影渐渐模糊，只剩下那瓶雅诗兰黛香水清晰地呈现在画面中央。香水在阳光下闪烁着光芒，旁边出现一行字幕："雅诗兰黛香水，见证2026世界杯的浪漫爱情。"'
     ];
+
+    function generateStoryboard() {
+      document.getElementById('storyboardProgress').style.display = '';
+      document.getElementById('storyboardResult').style.display = 'none';
+      let progress = 0;
+      const bar = document.getElementById('progressBar');
+      bar.style.width = '0%';
+      const timer = setInterval(() => {
+        progress += Math.random() * 20 + 10;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(timer);
+          document.getElementById('storyboardProgress').style.display = 'none';
+          document.getElementById('storyboardResult').style.display = '';
+          renderShots();
+        }
+        bar.style.width = progress + '%';
+      }, 400);
+    }
+    function renderShots() {
+      const shots = [
+        {title: '镜头1', desc: '1. 画面中，一位时尚女孩站在赛场边的角落，她身着时尚潮流的运动套装，背着一个小巧精致的背包。女孩神情兴奋，眼神中满是对比赛的期待。她从背包里拿出一瓶雅诗兰黛香水，轻轻拧开瓶盖，在手腕和脖颈处喷洒。那香水的液体晶莹剔透，喷洒出来的瞬间，细腻的雾状芬芳飘散在空气中，女孩闭上眼睛，享受着这迷人的香气。', imgs: ['img/1-1.jpeg', 'img/1-2.jpeg']},
+        {title: '镜头2', desc: '2. 女孩比赛结束后，带着满足的笑容走进咖啡馆，找了个靠窗的位置坐下，点了一杯咖啡。不一会儿，一位活力男孩也走进了咖啡馆，他穿着印有球队标志的球衣，脸上洋溢着对足球的热情。男孩环顾四周，准备找个空位，这时，女孩身上雅诗兰黛香水的独特气息飘进了他的鼻子，他的目光不由自主地落在了女孩身上。', imgs: ['img/2-1.jpeg', 'img/2-2.jpeg']},
+        {title: '镜头3', desc: '3. 男孩鼓起勇气走到女孩桌前，礼貌地询问是否可以坐下，女孩微笑着点头。两人开始聊起刚刚结束的比赛，越聊越投机，他们的眼神中都闪烁着光芒。此时，雅诗兰黛香水的芬芳在他们周围轻轻弥漫，仿佛为这个温馨的场景增添了一层浪漫的薄纱。桌上的咖啡冒着热气，与香水的香气交织在一起。', imgs: ['img/3-1.jpeg', 'img/3-2.jpeg']},
+        {title: '镜头4', desc: '4. 正当两人聊得火热时，女孩的手机突然响起，她接起电话后，脸色变得有些担忧。原来家里有急事需要她马上回去。女孩抱歉地看着男孩，准备起身离开。男孩有些失落，眼神中流露出不舍。此时，窗外的大雨仿佛也在为这可能的分别增添了一丝忧伤的氛围，而雅诗兰黛香水的味道也似乎变得有些苦涩。', imgs: ['img/4-1.jpeg', 'img/4-2.jpeg']},
+        {title: '镜头5', desc: '5. 女孩起身准备离开，男孩着急地拉住她的手，大声说："等雨停了再走吧。"女孩停下脚步，看着男孩真诚的眼神，心中一阵感动。两人站在门口，雨水在他们身边飞溅，而雅诗兰黛香水的芬芳在雨中更加浓郁。他们四目相对，气氛变得暧昧而浪漫。', imgs: ['img/5-1.jpeg', 'img/5-2.jpeg']},
+        {title: '镜头6', desc: '6. 男孩和女孩手牵手走出咖啡馆，街道两旁的花朵在雨后显得格外娇艳。他们漫步在街道上，脸上都洋溢着幸福的笑容。雅诗兰黛香水的味道在他们身边萦绕，仿佛是他们爱情的见证。阳光洒在他们身上，形成了一幅美丽的画面。', imgs: ['img/6-1.jpeg', 'img/6-2.jpeg']},
+        {title: '镜头7', desc: '7. 画面中，男孩和女孩的身影渐渐模糊，只剩下那瓶雅诗兰黛香水清晰地呈现在画面中央。香水在阳光下闪烁着光芒，旁边出现一行字幕："雅诗兰黛香水，见证2026世界杯的浪漫爱情。"', imgs: ['img/7-1.jpeg', 'img/7-2.jpeg']}
+      ];
+      const shotsList = document.getElementById('shotsList');
+      shotsList.innerHTML = '';
+      shots.forEach(shot => {
+        shotsList.innerHTML += `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;">
+            <div style="flex:0 0 90px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:1.15rem;color:#6a82fb;">${shot.title}</div>
+            <div style="flex:1;max-width:32%;padding:0 18px 0 18px;display:flex;align-items:center;">${shot.desc}</div>
+            <div style="flex:1.5;max-width:54%;display:flex;gap:18px;align-items:center;">
+              <img src="${shot.imgs[0]}" style="width:48%;height:180px;object-fit:cover;border-radius:12px;background:#e0e7ff;cursor:pointer;" onclick="showImgPreview(this)">
+              <img src="${shot.imgs[1]}" style="width:48%;height:180px;object-fit:cover;border-radius:12px;background:#e0e7ff;cursor:pointer;" onclick="showImgPreview(this)">
+            </div>
+          </div>
+        `;
+      });
+    }
+    function showImgPreview(imgEl) {
+      var modal = document.getElementById('imgPreviewModal');
+      var img = document.getElementById('imgPreview');
+      img.src = imgEl.src;
+      modal.style.display = 'flex';
+      modal.onclick = function() { modal.style.display = 'none'; }
+    } 
 
     function selectShot(element) {
       // 选中高亮
@@ -844,20 +1022,86 @@
       el.style.boxShadow = '0 0 0 3px #6a82fb';
       selectedClipIndex = parseInt(el.getAttribute('data-clip'));
     }
-    document.getElementById('clipSubmitBtn').onclick = function() {
-      // 只要选了clip就给当前镜头打勾
-      if(selectedClipIndex === null) { alert('请先选择一个Clip视频'); return; }
-      const shotThumbs = document.querySelectorAll('.clip-shot-thumb');
-      const selected = shotThumbs[currentClipShotIndex];
-      if (!selected) { alert('请先选择一个镜头'); return; }
-      let check = selected.querySelector('.shot-check');
-      if (!check) {
-        check = document.createElement('span');
-        check.className = 'shot-check';
-        check.innerHTML = '✔';
-        check.style.cssText = 'position:absolute;right:10px;top:10px;color:#22c55e;font-size:1.6em;font-weight:bold;background:rgba(255,255,255,0.8);border-radius:50%;padding:2px 8px;z-index:3;';
-        selected.appendChild(check);
+    function generateTheme() {
+      // 找到主题输入框（第一个input-row下的input）
+      const briefSection = document.getElementById('brief');
+      if (!briefSection) return;
+      const inputRows = briefSection.querySelectorAll('.input-row');
+      let themeInput = null;
+      if (inputRows.length > 2) {
+        themeInput = inputRows[2].querySelector('input[type="text"]');
       }
+      if (!themeInput) return;
+      // 检查是否已有进度条，避免重复
+      let oldBar = themeInput.parentNode.querySelector('.theme-progress-bar');
+      if (oldBar) oldBar.remove();
+      // 创建进度条
+      const progressBar = document.createElement('div');
+      progressBar.className = 'theme-progress-bar';
+      progressBar.style.width = '100%';
+      progressBar.style.height = '4px';
+      progressBar.style.backgroundColor = '#e0e7ff';
+      progressBar.style.borderRadius = '2px';
+      progressBar.style.marginBottom = '10px';
+      progressBar.style.overflow = 'hidden';
+      progressBar.innerHTML = `<div style='height:100%;width:0%;background:#6a82fb;border-radius:2px;transition:width 2s;'></div>`;
+      // 插入到input上方
+      themeInput.parentNode.insertBefore(progressBar, themeInput);
+      setTimeout(() => {
+        progressBar.firstChild.style.width = '100%';
+      }, 30);
+      setTimeout(() => {
+        progressBar.remove();
+        const theme1 = '雅诗兰黛臻爱香水的2026世界杯奇遇';
+        const theme2 = '雅诗兰黛香水，邂逅世界杯的浪漫心跳​';
+        if (themeInput.value.trim() === theme1) {
+          themeInput.value = theme2;
+        } else {
+          themeInput.value = theme1;
+        }
+      }, 2000);
+    }
+    function generateBriefStory() {
+      // 获取Brief Story文本域
+      const briefSection = document.getElementById('brief');
+      if (!briefSection) return;
+      const inputRows = briefSection.querySelectorAll('.input-row');
+      let textarea = null;
+      if (inputRows.length > 4) {
+        textarea = inputRows[4].querySelector('textarea');
+      }
+      if (!textarea) return;
+      // 检查并移除旧进度条
+      let oldBar = textarea.parentNode.querySelector('.brief-progress-bar');
+      if (oldBar) oldBar.remove();
+      // 创建进度条
+      const progressBar = document.createElement('div');
+      progressBar.className = 'brief-progress-bar';
+      progressBar.style.width = '100%';
+      progressBar.style.height = '4px';
+      progressBar.style.backgroundColor = '#e0e7ff';
+      progressBar.style.borderRadius = '2px';
+      progressBar.style.marginBottom = '10px';
+      progressBar.style.overflow = 'hidden';
+      progressBar.innerHTML = `<div style='height:100%;width:0%;background:#6a82fb;border-radius:2px;transition:width 2s;'></div>`;
+      // 插入到textarea上方
+      textarea.parentNode.insertBefore(progressBar, textarea);
+      setTimeout(() => {
+        progressBar.firstChild.style.width = '100%';
+      }, 30);
+      setTimeout(() => {
+        progressBar.remove();
+        const text1 = `时尚女孩驻足世界杯赛场边，眼中闪烁着兴奋。她轻喷雅诗兰黛香水，氤氲芬芳中满怀期待。赛后，她带着满足的笑走进街角咖啡馆。活力男孩循着那抹独特馨香走来，球衣映着热情。香水牵引着他坐到她对面，交谈瞬间点燃共同话题，咖啡香与雅诗兰黛交织出浪漫氛围。\n\n骤然响起的电话带来急讯，女孩面露忧色起身。窗外雨幕垂落，男孩不舍拉住她的手："等雨停。" 四目相对间，雨点飞溅，却让香气在潮湿空气里愈发浓郁，暧昧丛生。\n\n雨霁天晴，他们牵手漫步。雨后花朵娇艳，阳光为伴，雅诗兰黛的芬芳萦绕左右，成为这段世界杯邂逅的最佳注脚。最终，画面聚焦阳光下璀璨的香水瓶与字幕："雅诗兰黛香水，见证2026世界杯的浪漫爱情。"`;
+        const text2 = `世界杯赛场边，一位时尚女孩轻喷雅诗兰黛香水，晶莹芬芳绽放，满眼是对盛会的憧憬。\n\n赛后，她带着笑容走进咖啡馆小憩。片刻，一位活力四射的男孩——球衣还带着赛场的热情——步入店内。一丝独特的雅诗兰黛香气牵引了他的目光，自然地落在那位女孩身上。\n\n一场畅谈悄然开始。她眼中的光，他对足球的热忱，在咖啡香与雅诗兰黛的芬芳中共鸣。突如其来的电话却打破温馨——女孩需立刻返家。\n\n窗外大雨滂沱。男孩不舍挽留："等雨停好吗？"门廊前，雨水飞溅，雅诗兰黛的馨香在潮湿空气里越发清冽迷人，映照着他真诚的目光和她心头的悸动。\n\n雨停。世界仿佛被洗亮。他们牵手漫步，雨后阳光为伴，雅诗兰黛的芬芳轻盈萦绕，仿佛无声诉说这段始于世界杯的心动轨迹。`;
+        if (textarea.value.trim()) {
+          textarea.value = text2;
+        } else {
+          textarea.value = text1;
+        }
+        // 文本域高度自适应
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      }, 2000);
     }
   </script>
 </body>
