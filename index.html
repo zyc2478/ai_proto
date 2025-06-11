@@ -232,6 +232,96 @@
     @media (max-width: 700px) {
       .video-masonry { column-count: 1; }
     }
+    .img-toolbar {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 18px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 32px;
+      box-shadow: 0 4px 16px rgba(106,130,251,0.10);
+      padding: 8px 20px;
+      z-index: 10;
+      align-items: center;
+    }
+    .img-toolbar-btn {
+      background: none;
+      border: none;
+      outline: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s, box-shadow 0.18s;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(106,130,251,0.08);
+    }
+    .img-toolbar-btn:hover {
+      background: #e0e7ff;
+      box-shadow: 0 4px 16px rgba(106,130,251,0.18);
+    }
+    .img-toolbar-btn svg {
+      display: block;
+    }
+    .replace-popover {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 2px 12px rgba(106,130,251,0.13);
+      padding: 6px 14px;
+      border: 1.5px solid #e0e7ff;
+      font-size: 15px;
+    }
+    .replace-input {
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border 0.18s;
+    }
+    .replace-input:focus {
+      border: 1.5px solid #6a82fb;
+    }
+    .replace-confirm {
+      background: linear-gradient(90deg,#6a82fb,#fc5c7d);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 4px 14px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .replace-confirm:hover {
+      background: linear-gradient(90deg,#fc5c7d,#6a82fb);
+    }
+    .replace-progress-bar {
+      position: absolute;
+      left: 50%;
+      top: 18px;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 8px;
+      background: #e0e7ff;
+      border-radius: 8px;
+      overflow: hidden;
+      z-index: 20;
+      box-shadow: 0 2px 8px rgba(106,130,251,0.10);
+    }
+    .replace-progress-inner {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg,#6a82fb,#fc5c7d);
+      border-radius: 8px;
+      transition: width 2s cubic-bezier(.4,1,.6,1);
+    }
   </style>
 </head>
 <body>
@@ -340,7 +430,7 @@
 <div id="material" class="section" style="display:none;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
     <div style="font-size:24px;font-weight:600;">选择/生成图像</div>
-    <button onclick="switchPage('material', 'storyboardPage')" style="padding:8px 16px;background:#6a82fb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;">返回</button>
+    <button onclick="showPage('storyboard')" style="padding:8px 16px;background:#6a82fb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;">返回</button>
   </div>
   <div style="position:relative;margin-bottom:32px;display:flex;justify-content:center;">
     <button onclick="scrollShots('left')" style="position:absolute;left:0;top:50%;transform:translateY(-50%);background:#6a82fb;color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:22px;z-index:2;">&lt;</button>
@@ -396,8 +486,327 @@
       <!-- 这里动态填充图片或占位框 -->
     </div>
   </div>
+  <script>
+    // 全局变量声明
+    let lastImgToolbar = null;
+    let shotScrollIndex = 0;
+    let currentShotIndex = 0;
+    let submittedShots = Array(7).fill(false);
+    let clipShotScrollIndex = 0;
+    let currentClipShotIndex = 0;
+    let selectedClipIndex = null;
+
+    // 全局函数定义
+    function showPage(page) {
+      console.log('Switching to page:', page);
+      
+      // 隐藏所有页面
+      ['home', 'brief', 'material', 'storyboard', 'clip', 'compose'].forEach(function(id) {
+        const element = document.getElementById(id);
+        if (element) {
+          if (id === page) {
+            element.style.display = 'block';
+            console.log('Showing element:', id);
+          } else {
+            element.style.display = 'none';
+            console.log('Hiding element:', id);
+          }
+        } else {
+          console.log('Element not found:', id);
+        }
+      });
+      
+      // 更新导航高亮
+      document.querySelectorAll('.nav a').forEach(function(a) {
+        const isActive = a.getAttribute('href') === '#' + page;
+        a.classList.toggle('active', isActive);
+        console.log('Nav link:', a.getAttribute('href'), 'active:', isActive);
+      });
+    }
+
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      // 导航点击切换
+      document.querySelectorAll('.nav a').forEach(function(a) {
+        a.addEventListener('click', function(e) {
+          e.preventDefault();
+          const page = a.getAttribute('href').replace('#', '');
+          console.log('Nav clicked:', page);
+          showPage(page);
+        });
+      });
+
+      // 页面加载时根据hash显示对应页面
+      const hash = location.hash.replace('#', '') || 'home';
+      console.log('Initial hash:', hash);
+      showPage(hash);
+
+      // hash变化时切换页面
+      window.addEventListener('hashchange', function() {
+        const hash = location.hash.replace('#', '') || 'home';
+        console.log('Hash changed:', hash);
+        showPage(hash);
+      });
+
+      // 初始化默认选中镜头1
+      selectClipShot(document.querySelector('.clip-shot-thumb[data-index="0"]'));
+    });
+
+    function generateImages() {
+      const progressBar = document.getElementById('progressBar');
+      const progressFill = document.getElementById('progressFill');
+      const generatedImages = document.getElementById('generatedImages');
+      const genImgGrid = document.getElementById('genImgGrid');
+      progressBar.style.display = 'block';
+      progressFill.style.width = '0%';
+      generatedImages.style.display = 'block';
+      genImgGrid.innerHTML = '';
+      for(let i=0;i<4;i++){
+        genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;position:relative;overflow:hidden;cursor:pointer;' onclick='selectGeneratedImage(this, event)'></div>`;
+      }
+      setTimeout(() => {
+        progressFill.style.width = '100%';
+      }, 50);
+      setTimeout(() => {
+        genImgGrid.innerHTML = '';
+        const shotNum = currentShotIndex + 1;
+        for(let i=1;i<=4;i++){
+          genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;' onclick='selectGeneratedImage(this, event)'><img src='img/shot${shotNum}-${i}.jpeg' style='width:100%;height:100%;object-fit:cover;border-radius:12px;'></div>`;
+        }
+        progressBar.style.display = 'none';
+      }, 2000);
+    }
+    function scrollShots(direction) {
+      const maxIndex = 3;
+      const totalShots = 7;
+      if (direction === 'left') {
+        shotScrollIndex = Math.max(0, shotScrollIndex - 1);
+      } else {
+        shotScrollIndex = Math.min(totalShots - 4, shotScrollIndex + 1);
+      }
+      document.getElementById('shotsInner').style.transform = `translateX(-${shotScrollIndex * 284}px)`;
+    }
+    function selectShot(element) {
+      // 选中高亮
+      document.querySelectorAll('.shot-thumb').forEach(e => e.style.boxShadow = 'none');
+      element.style.boxShadow = '0 0 0 3px #6a82fb';
+      // 获取索引并显示提示词
+      const idx = parseInt(element.getAttribute('data-index'));
+      currentShotIndex = idx;
+      document.getElementById('promptText').value = shotPrompts[idx] || '';
+    }
+    function generateImages() {
+      const progressBar = document.getElementById('progressBar');
+      const progressFill = document.getElementById('progressFill');
+      const generatedImages = document.getElementById('generatedImages');
+      const genImgGrid = document.getElementById('genImgGrid');
+      progressBar.style.display = 'block';
+      progressFill.style.width = '0%';
+      generatedImages.style.display = 'block';
+      genImgGrid.innerHTML = '';
+      for(let i=0;i<4;i++){
+        genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;position:relative;overflow:hidden;cursor:pointer;' onclick='selectGeneratedImage(this, event)'></div>`;
+      }
+      setTimeout(() => {
+        progressFill.style.width = '100%';
+      }, 50);
+      setTimeout(() => {
+        genImgGrid.innerHTML = '';
+        const shotNum = currentShotIndex + 1;
+        for(let i=1;i<=4;i++){
+          genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;' onclick='selectGeneratedImage(this, event)'><img src='img/shot${shotNum}-${i}.jpeg' style='width:100%;height:100%;object-fit:cover;border-radius:12px;'></div>`;
+        }
+        progressBar.style.display = 'none';
+      }, 2000);
+    }
+    // 删除重复的lastImgToolbar声明
+    function selectGeneratedImage(element, event) {
+      // 移除上一个工具栏
+      if(lastImgToolbar) lastImgToolbar.remove();
+      // 工具栏HTML（美化+新SVG图标）
+      const toolbar = document.createElement('div');
+      toolbar.className = 'img-toolbar';
+      toolbar.innerHTML = `
+        <button class='img-toolbar-btn' title='一键高清'>
+          <svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='#6a82fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v2M12 19v2M21 12h-2M5 12H3M17.657 6.343l-1.414 1.414M6.343 17.657l-1.414 1.414M17.657 17.657l-1.414-1.414M6.343 6.343L4.929 4.929M12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8z'/></svg>
+        </button>
+        <button class='img-toolbar-btn' title='一键换物' id='replace-item-btn'>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6a82fb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </button>
+        <button class='img-toolbar-btn' title='一键换装'>
+          <svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='#6a82fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/><circle cx='12' cy='7' r='4'/></svg>
+        </button>
+      `;
+      element.appendChild(toolbar);
+      lastImgToolbar = toolbar;
+      event.stopPropagation();
+
+      // 一键换物按钮弹出浮层逻辑（浮层插入body并定位）
+      const replaceBtn = toolbar.querySelector('#replace-item-btn');
+      replaceBtn.onclick = function(e) {
+        e.stopPropagation();
+        // 若已存在浮层先移除
+        const oldPopover = document.getElementById('replace-popover');
+        if(oldPopover) oldPopover.remove();
+        // 创建浮层
+        const popover = document.createElement('div');
+        popover.id = 'replace-popover';
+        popover.className = 'replace-popover';
+        popover.innerHTML = `
+          <input class='replace-input' type='text' placeholder='请输入新物品，如"足球"' style='width:120px;'>
+          <button class='replace-confirm'>确认</button>
+        `;
+        document.body.appendChild(popover);
+        // 定位到图片上方中央
+        const rect = element.getBoundingClientRect();
+        const popoverRect = {width: 180, height: 36}; // 估算宽高
+        popover.style.position = 'fixed';
+        popover.style.left = (rect.left + rect.width/2 - popoverRect.width/2) + 'px';
+        popover.style.top = (rect.top - popoverRect.height - 12) + 'px';
+        popover.style.zIndex = '9999';
+
+        // 点击浮层外自动关闭
+        function handleDocClick(ev) {
+          if (!popover.contains(ev.target)) {
+            popover.remove();
+            document.removeEventListener('mousedown', handleDocClick, true);
+          }
+        }
+        setTimeout(()=>{
+          document.addEventListener('mousedown', handleDocClick, true);
+        }, 10);
+
+        // 事件：确认关闭
+        popover.querySelector('.replace-confirm').onclick = function(ev) {
+          ev.stopPropagation();
+          popover.remove();
+          document.removeEventListener('mousedown', handleDocClick, true);
+          // 仅对第一张图片做进度条和替换
+          const img = element.querySelector('img');
+          const isFirst = img && img.src && /shot1-1\.jpeg/.test(img.src);
+          if(isFirst) {
+            // 创建进度条
+            let progressBar = element.querySelector('.replace-progress-bar');
+            if(progressBar) progressBar.remove();
+            progressBar = document.createElement('div');
+            progressBar.className = 'replace-progress-bar';
+            progressBar.innerHTML = `<div class='replace-progress-inner'></div>`;
+            element.appendChild(progressBar);
+            // 动画
+            setTimeout(()=>{
+              progressBar.querySelector('.replace-progress-inner').style.width = '100%';
+            }, 30);
+            setTimeout(()=>{
+              progressBar.remove();
+              img.src = 'img/shot1-change-beer.jpeg';
+            }, 2030);
+          }
+        };
+        // 回车也可确认
+        popover.querySelector('.replace-input').onkeydown = function(ev) {
+          if(ev.key==='Enter') {
+            popover.querySelector('.replace-confirm').click();
+          }
+        };
+        // 自动聚焦
+        popover.querySelector('.replace-input').focus();
+      };
+    }
+    // 点击空白处关闭工具栏
+    document.addEventListener('click', function(e){
+      if(lastImgToolbar && !lastImgToolbar.contains(e.target)){
+        lastImgToolbar.remove();
+        lastImgToolbar = null;
+      }
+    });
+    function submitImage() {
+      alert('图像已提交！');
+    }
+    function submitUpload() {
+      // 直接根据 currentShotIndex 获取镜头
+      const shotThumbs = document.querySelectorAll('.shot-thumb');
+      const selected = shotThumbs[currentShotIndex];
+      if (!selected) { alert('请先选择一个镜头'); return; }
+      // 只给当前选中的镜头加勾，不移除其他勾
+      let check = selected.querySelector('.shot-check');
+      if (!check) {
+        check = document.createElement('span');
+        check.className = 'shot-check';
+        check.innerHTML = '✔';
+        check.style.cssText = 'position:absolute;right:10px;top:10px;color:#22c55e;font-size:1.6em;font-weight:bold;background:rgba(255,255,255,0.8);border-radius:50%;padding:2px 8px;z-index:3;';
+        selected.appendChild(check);
+      }
+    }
+    function scrollClipShots(direction) {
+      const totalShots = 7;
+      if (direction === 'left') {
+        clipShotScrollIndex = Math.max(0, clipShotScrollIndex - 1);
+      } else {
+        clipShotScrollIndex = Math.min(totalShots - 4, clipShotScrollIndex + 1);
+      }
+      document.getElementById('clipShotsInner').style.transform = `translateX(-${clipShotScrollIndex * 284}px)`;
+    }
+    function selectClipShot(element) {
+      document.querySelectorAll('.clip-shot-thumb').forEach(e => e.style.boxShadow = 'none');
+      element.style.boxShadow = '0 0 0 3px #6a82fb';
+      const idx = parseInt(element.getAttribute('data-index'));
+      currentClipShotIndex = idx;
+      let refImg = `img/shot${idx+1}-1.jpeg`;
+      if(idx === 2) refImg = 'img/shot3-2.jpeg';
+      document.getElementById('clipRefImg').src = refImg;
+      // 提示词逻辑：用shotPrompts数组内容
+      const div = document.getElementById('clipPromptText');
+      div.textContent = shotPrompts[idx] || '';
+    }
+    function generateClipVideos() {
+      const progressBar = document.getElementById('clipProgressBar');
+      const progressFill = document.getElementById('clipProgressFill');
+      const generatedClips = document.getElementById('generatedClips');
+      const clipGrid = document.getElementById('clipGrid');
+      // 显示进度条和占位
+      progressBar.style.display = 'block';
+      progressFill.style.width = '0%';
+      generatedClips.style.display = 'block';
+      clipGrid.innerHTML = '';
+      selectedClipIndex = null;
+      for(let i=0;i<4;i++){
+        clipGrid.innerHTML += `<div class='clip-video-thumb' data-clip='${i}' style='aspect-ratio:1.6;background:#e0e7ff;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;'></div>`;
+      }
+      setTimeout(() => {
+        progressFill.style.width = '100%';
+      }, 50);
+      setTimeout(() => {
+        clipGrid.innerHTML = '';
+        const shotNum = currentClipShotIndex + 1;
+        for(let i=1;i<=4;i++){
+          clipGrid.innerHTML += `<div class='clip-video-thumb' data-clip='${i-1}' onclick='selectClipVideo(this)' style='aspect-ratio:1.6;background:#e0e7ff;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;'><video src='video/shot${shotNum}-${i}.mp4' controls style='width:100%;height:100%;border-radius:12px;background:#000;'></video></div>`;
+        }
+        progressBar.style.display = 'none';
+      }, 2000);
+    }
+    function selectClipVideo(el) {
+      document.querySelectorAll('.clip-video-thumb').forEach(e => e.style.boxShadow = 'none');
+      el.style.boxShadow = '0 0 0 3px #6a82fb';
+      selectedClipIndex = parseInt(el.getAttribute('data-clip'));
+    }
+    document.getElementById('clipSubmitBtn').onclick = function() {
+      // 只要选了clip就给当前镜头打勾
+      if(selectedClipIndex === null) { alert('请先选择一个Clip视频'); return; }
+      const shotThumbs = document.querySelectorAll('.clip-shot-thumb');
+      const selected = shotThumbs[currentClipShotIndex];
+      if (!selected) { alert('请先选择一个镜头'); return; }
+      let check = selected.querySelector('.shot-check');
+      if (!check) {
+        check = document.createElement('span');
+        check.className = 'shot-check';
+        check.innerHTML = '✔';
+        check.style.cssText = 'position:absolute;right:10px;top:10px;color:#22c55e;font-size:1.6em;font-weight:bold;background:rgba(255,255,255,0.8);border-radius:50%;padding:2px 8px;z-index:3;';
+        selected.appendChild(check);
+      }
+    }
+  </script>
   <div style="display:flex;justify-content:flex-end;gap:16px;margin-top:32px;">
-    <button onclick="switchPage('material', 'storyboardPage')" style="padding:12px 24px;background:#f3f4f6;border:none;border-radius:8px;cursor:pointer;font-weight:500;">返回</button>
+    <button onclick="showPage('storyboard')" style="padding:12px 24px;background:#f3f4f6;border:none;border-radius:8px;cursor:pointer;font-weight:500;">返回</button>
     <button id="submitBtn" style="padding:12px 24px;background:#6a82fb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;display:none;" onclick="submitImage()">提交</button>
   </div>
 </div>
@@ -451,70 +860,132 @@
 
 <!-- 页面5：生成Clip短片 -->
 <div id="clip" class="section" style="display:none;">
-  <h2>生成Clip短片</h2>
-  <div class="clip-list">
-    <div class="clip-item">
-      <div>Clip 1</div>
-      <button class="gen-btn">编辑</button>
-    </div>
-    <div class="clip-item">
-      <div>Clip 2</div>
-      <button class="gen-btn">编辑</button>
-    </div>
-    <button class="add-btn">添加Clip</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+    <div style="font-size:24px;font-weight:600;">生成Clip短片</div>
+    <button onclick="showPage('storyboard')" style="padding:8px 16px;background:#6a82fb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;">返回</button>
   </div>
-  <button class="main-btn" onclick="showPage('compose')">下一步：视频合成</button>
+  <!-- 镜头选择条 -->
+  <div style="position:relative;margin-bottom:32px;display:flex;justify-content:center;">
+    <button onclick="scrollClipShots('left')" style="position:absolute;left:0;top:50%;transform:translateY(-50%);background:#6a82fb;color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:22px;z-index:2;">&lt;</button>
+    <div id="clipShotsContainer" style="width:1104px;max-width:100vw;overflow:hidden;position:relative;padding:16px 0;">
+      <div id="clipShotsInner" style="display:flex;gap:24px;transition:transform 0.3s;will-change:transform;">
+        <div class="clip-shot-thumb" data-index="0" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/1-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头1</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="1" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/2-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头2</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="2" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/3-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头3</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="3" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/4-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头4</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="4" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/5-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头5</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="5" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/6-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头6</span>
+        </div>
+        <div class="clip-shot-thumb" data-index="6" onclick="selectClipShot(this)" style="width:260px;height:180px;background:#e0e7ff;border-radius:16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-start;position:relative;">
+          <img src="img/7-1.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+          <span style="position:absolute;left:14px;top:14px;color:#333;font-weight:500;background:rgba(255,255,255,0.7);border-radius:8px;padding:2px 12px;">镜头7</span>
+        </div>
+      </div>
+    </div>
+    <button onclick="scrollClipShots('right')" style="position:absolute;right:0;top:50%;transform:translateY(-50%);background:#6a82fb;color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:22px;z-index:2;">&gt;</button>
+  </div>
+  <!-- 参考图+提示词左右布局 -->
+  <div style="display:flex;justify-content:center;align-items:flex-start;gap:48px;margin-bottom:32px;">
+    <div style="display:flex;flex-direction:column;align-items:center;width:400px;">
+      <div style="align-self:flex-start;font-weight:600;font-size:1.08rem;color:#6a82fb;margin-bottom:8px;">参考图</div>
+      <div id="clipRefImgBox" style="width:400px;height:260px;background:#e0e7ff;border-radius:18px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+        <img id="clipRefImg" src="img/shot1-1.jpeg" style="width:100%;height:100%;object-fit:contain;border-radius:18px;">
+      </div>
+    </div>
+    <div style="flex:1;min-width:260px;max-width:420px;">
+      <div style="font-weight:600;margin-bottom:16px;">提示词</div>
+      <div id="clipPromptText" style="width:100%;min-height:60px;max-height:600px;padding:16px;border:1.5px solid #e5e7eb;border-radius:10px;font-family:inherit;font-size:1.08rem;line-height:1.7;background:#fff;box-sizing:border-box;white-space:pre-wrap;word-break:break-all;"></div>
+    </div>
+  </div>
+  <!-- 生成Clip按钮和进度条 -->
+  <div style="margin-bottom:32px;">
+    <button id="genClipBtn" style="width:100%;padding:12px;background:#6a82fb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;" onclick="generateClipVideos()">生成Clip</button>
+    <button id="clipSubmitBtn" style="width:100%;padding:12px;background:#f3f4f6;color:#6a82fb;border:none;border-radius:8px;cursor:pointer;font-weight:500;margin-top:12px;">提交</button>
+    <div id="clipProgressBar" style="width:100%;height:4px;background:#e0e7ff;border-radius:2px;margin-top:16px;display:none;">
+      <div id="clipProgressFill" style="width:0%;height:100%;background:#6a82fb;border-radius:2px;transition:width 2s;"></div>
+    </div>
+  </div>
+  <!-- 生成的Clip视频 -->
+  <div id="generatedClips" style="display:none;margin-bottom:32px;">
+    <div style="font-weight:600;margin-bottom:16px;">生成的Clip</div>
+    <div id="clipGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+      <!-- 动态填充clip视频占位图 -->
+    </div>
+  </div>
 </div>
 
 <!-- 页面6：视频合成 -->
-<div id="compose" class="section" style="display:none;">
-  <h2>视频合成</h2>
-  <div>
-    <h3>选择Plot（镜头）</h3>
-    <div class="plot-list">
-      <div class="plot-item">镜头1</div>
-      <div class="plot-item">镜头2</div>
-    </div>
-  </div>
-  <div>
-    <h3>选择图片素材/Clip短片</h3>
-    <div class="material-list">
-      <div class="material-item">图片1</div>
-      <div class="material-item">Clip1</div>
-    </div>
-  </div>
-  <div class="effect-select">
-    <label>合成方式/特效：</label>
-    <select>
-      <option>淡入淡出</option>
-      <option>转场</option>
-      <option>AI特效</option>
-    </select>
-  </div>
-  <button class="compose-btn">合成视频</button>
-  <div style="margin-top:24px;">
-    <h3>支持大模型语言交互合成</h3>
-    <textarea rows="2" placeholder="请输入合成指令或描述"></textarea>
-    <button class="gen-btn">智能合成</button>
-  </div>
+<div id="compose" class="section" style="display:none;min-height:400px;display:flex;align-items:center;justify-content:center;">
+  <div style="width:100%;text-align:center;font-size:2.2rem;color:#6a82fb;font-weight:700;letter-spacing:2px;">敬请期待</div>
 </div>
 
 <script>
-  // 简单页面切换逻辑
-  function showPage(page) {
-    ['home', 'brief', 'material', 'storyboard', 'clip', 'compose'].forEach(function(id) {
-      document.getElementById(id).style.display = (id === page) ? '' : 'none';
-    });
-    // 导航高亮
+  document.addEventListener('DOMContentLoaded', function() {
+    // 页面切换函数
+    function showPage(page) {
+      console.log('Switching to page:', page); // 添加调试日志
+      
+      // 隐藏所有页面
+      ['home', 'brief', 'material', 'storyboard', 'clip', 'compose'].forEach(function(id) {
+        const element = document.getElementById(id);
+        if (element) {
+          if (id === page) {
+            element.style.display = 'block';
+            console.log('Showing element:', id); // 添加调试日志
+          } else {
+            element.style.display = 'none';
+            console.log('Hiding element:', id); // 添加调试日志
+          }
+        } else {
+          console.log('Element not found:', id); // 添加调试日志
+        }
+      });
+      
+      // 更新导航高亮
+      document.querySelectorAll('.nav a').forEach(function(a) {
+        const isActive = a.getAttribute('href') === '#' + page;
+        a.classList.toggle('active', isActive);
+        console.log('Nav link:', a.getAttribute('href'), 'active:', isActive); // 添加调试日志
+      });
+    }
+
+    // 导航点击切换
     document.querySelectorAll('.nav a').forEach(function(a) {
-      a.classList.toggle('active', a.getAttribute('href') === '#' + page);
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        const page = a.getAttribute('href').replace('#', '');
+        console.log('Nav clicked:', page); // 添加调试日志
+        showPage(page);
+      });
     });
-  }
-  // 导航点击切换
-  document.querySelectorAll('.nav a').forEach(function(a) {
-    a.addEventListener('click', function(e) {
-      e.preventDefault();
-      showPage(a.getAttribute('href').replace('#', ''));
+
+    // 页面加载时根据hash显示对应页面
+    const hash = location.hash.replace('#', '') || 'home';
+    console.log('Initial hash:', hash); // 添加调试日志
+    showPage(hash);
+
+    // hash变化时切换页面
+    window.addEventListener('hashchange', function() {
+      const hash = location.hash.replace('#', '') || 'home';
+      console.log('Hash changed:', hash); // 添加调试日志
+      showPage(hash);
     });
   });
 
@@ -580,7 +1051,6 @@
     '男孩和女孩手牵手走出咖啡馆，街道两旁的花朵在雨后显得格外娇艳。他们漫步在街道上，脸上都洋溢着幸福的笑容。雅诗兰黛香水的味道在他们身边萦绕，仿佛是他们爱情的见证。阳光洒在他们身上，形成了一幅美丽的画面。',
     '画面中，男孩和女孩的身影渐渐模糊，只剩下那瓶雅诗兰黛香水清晰地呈现在画面中央。香水在阳光下闪烁着光芒，旁边出现一行字幕："雅诗兰黛香水，见证2026世界杯的浪漫爱情。"'
   ];
-  let shotScrollIndex = 0;
   function scrollShots(direction) {
     const maxIndex = 3;
     const totalShots = 7;
@@ -591,7 +1061,6 @@
     }
     document.getElementById('shotsInner').style.transform = `translateX(-${shotScrollIndex * 284}px)`;
   }
-  let currentShotIndex = 0;
   function selectShot(element) {
     // 选中高亮
     document.querySelectorAll('.shot-thumb').forEach(e => e.style.boxShadow = 'none');
@@ -606,42 +1075,200 @@
     const progressFill = document.getElementById('progressFill');
     const generatedImages = document.getElementById('generatedImages');
     const genImgGrid = document.getElementById('genImgGrid');
-    // 显示进度条和占位框
     progressBar.style.display = 'block';
     progressFill.style.width = '0%';
     generatedImages.style.display = 'block';
     genImgGrid.innerHTML = '';
     for(let i=0;i<4;i++){
-      genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;'></div>`;
+      genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;position:relative;overflow:hidden;cursor:pointer;' onclick='selectGeneratedImage(this, event)'></div>`;
     }
-    // 进度条动画
     setTimeout(() => {
       progressFill.style.width = '100%';
     }, 50);
-    // 2秒后显示图片
     setTimeout(() => {
       genImgGrid.innerHTML = '';
       const shotNum = currentShotIndex + 1;
       for(let i=1;i<=4;i++){
-        genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;'><img src='img/shot${shotNum}-${i}.jpeg' style='width:100%;height:100%;object-fit:cover;border-radius:12px;'></div>`;
+        genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;' onclick='selectGeneratedImage(this, event)'><img src='img/shot${shotNum}-${i}.jpeg' style='width:100%;height:100%;object-fit:cover;border-radius:12px;'></div>`;
       }
       progressBar.style.display = 'none';
     }, 2000);
   }
-  function selectGeneratedImage(element) {
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.style.display = 'block';
+  function selectGeneratedImage(element, event) {
+    // 移除上一个工具栏
+    if(lastImgToolbar) lastImgToolbar.remove();
+    // 工具栏HTML（美化+新SVG图标）
+    const toolbar = document.createElement('div');
+    toolbar.className = 'img-toolbar';
+    toolbar.innerHTML = `
+      <button class='img-toolbar-btn' title='一键高清'>
+        <svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='#6a82fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v2M12 19v2M21 12h-2M5 12H3M17.657 6.343l-1.414 1.414M6.343 17.657l-1.414 1.414M17.657 17.657l-1.414-1.414M6.343 6.343L4.929 4.929M12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8z'/></svg>
+      </button>
+      <button class='img-toolbar-btn' title='一键换物' id='replace-item-btn'>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6a82fb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      </button>
+      <button class='img-toolbar-btn' title='一键换装'>
+        <svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='#6a82fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/><circle cx='12' cy='7' r='4'/></svg>
+      </button>
+    `;
+    element.appendChild(toolbar);
+    lastImgToolbar = toolbar;
+    event.stopPropagation();
+
+    // 一键换物按钮弹出浮层逻辑（浮层插入body并定位）
+    const replaceBtn = toolbar.querySelector('#replace-item-btn');
+    replaceBtn.onclick = function(e) {
+      e.stopPropagation();
+      // 若已存在浮层先移除
+      const oldPopover = document.getElementById('replace-popover');
+      if(oldPopover) oldPopover.remove();
+      // 创建浮层
+      const popover = document.createElement('div');
+      popover.id = 'replace-popover';
+      popover.className = 'replace-popover';
+      popover.innerHTML = `
+        <input class='replace-input' type='text' placeholder='请输入新物品，如"足球"' style='width:120px;'>
+        <button class='replace-confirm'>确认</button>
+      `;
+      document.body.appendChild(popover);
+      // 定位到图片上方中央
+      const rect = element.getBoundingClientRect();
+      const popoverRect = {width: 180, height: 36}; // 估算宽高
+      popover.style.position = 'fixed';
+      popover.style.left = (rect.left + rect.width/2 - popoverRect.width/2) + 'px';
+      popover.style.top = (rect.top - popoverRect.height - 12) + 'px';
+      popover.style.zIndex = '9999';
+
+      // 点击浮层外自动关闭
+      function handleDocClick(ev) {
+        if (!popover.contains(ev.target)) {
+          popover.remove();
+          document.removeEventListener('mousedown', handleDocClick, true);
+        }
+      }
+      setTimeout(()=>{
+        document.addEventListener('mousedown', handleDocClick, true);
+      }, 10);
+
+      // 事件：确认关闭
+      popover.querySelector('.replace-confirm').onclick = function(ev) {
+        ev.stopPropagation();
+        popover.remove();
+        document.removeEventListener('mousedown', handleDocClick, true);
+        // 仅对第一张图片做进度条和替换
+        const img = element.querySelector('img');
+        const isFirst = img && img.src && /shot1-1\.jpeg/.test(img.src);
+        if(isFirst) {
+          // 创建进度条
+          let progressBar = element.querySelector('.replace-progress-bar');
+          if(progressBar) progressBar.remove();
+          progressBar = document.createElement('div');
+          progressBar.className = 'replace-progress-bar';
+          progressBar.innerHTML = `<div class='replace-progress-inner'></div>`;
+          element.appendChild(progressBar);
+          // 动画
+          setTimeout(()=>{
+            progressBar.querySelector('.replace-progress-inner').style.width = '100%';
+          }, 30);
+          setTimeout(()=>{
+            progressBar.remove();
+            img.src = 'img/shot1-change-beer.jpeg';
+          }, 2030);
+        }
+      };
+      // 回车也可确认
+      popover.querySelector('.replace-input').onkeydown = function(ev) {
+        if(ev.key==='Enter') {
+          popover.querySelector('.replace-confirm').click();
+        }
+      };
+      // 自动聚焦
+      popover.querySelector('.replace-input').focus();
+    };
   }
+  // 点击空白处关闭工具栏
+  document.addEventListener('click', function(e){
+    if(lastImgToolbar && !lastImgToolbar.contains(e.target)){
+      lastImgToolbar.remove();
+      lastImgToolbar = null;
+    }
+  });
   function submitImage() {
     alert('图像已提交！');
   }
-  let submittedShots = Array(7).fill(false);
   function submitUpload() {
     // 直接根据 currentShotIndex 获取镜头
     const shotThumbs = document.querySelectorAll('.shot-thumb');
     const selected = shotThumbs[currentShotIndex];
     if (!selected) { alert('请先选择一个镜头'); return; }
     // 只给当前选中的镜头加勾，不移除其他勾
+    let check = selected.querySelector('.shot-check');
+    if (!check) {
+      check = document.createElement('span');
+      check.className = 'shot-check';
+      check.innerHTML = '✔';
+      check.style.cssText = 'position:absolute;right:10px;top:10px;color:#22c55e;font-size:1.6em;font-weight:bold;background:rgba(255,255,255,0.8);border-radius:50%;padding:2px 8px;z-index:3;';
+      selected.appendChild(check);
+    }
+  }
+  function scrollClipShots(direction) {
+    const totalShots = 7;
+    if (direction === 'left') {
+      clipShotScrollIndex = Math.max(0, clipShotScrollIndex - 1);
+    } else {
+      clipShotScrollIndex = Math.min(totalShots - 4, clipShotScrollIndex + 1);
+    }
+    document.getElementById('clipShotsInner').style.transform = `translateX(-${clipShotScrollIndex * 284}px)`;
+  }
+  function selectClipShot(element) {
+    document.querySelectorAll('.clip-shot-thumb').forEach(e => e.style.boxShadow = 'none');
+    element.style.boxShadow = '0 0 0 3px #6a82fb';
+    const idx = parseInt(element.getAttribute('data-index'));
+    currentClipShotIndex = idx;
+    let refImg = `img/shot${idx+1}-1.jpeg`;
+    if(idx === 2) refImg = 'img/shot3-2.jpeg';
+    document.getElementById('clipRefImg').src = refImg;
+    // 提示词逻辑：用shotPrompts数组内容
+    const div = document.getElementById('clipPromptText');
+    div.textContent = shotPrompts[idx] || '';
+  }
+  function generateClipVideos() {
+    const progressBar = document.getElementById('clipProgressBar');
+    const progressFill = document.getElementById('clipProgressFill');
+    const generatedClips = document.getElementById('generatedClips');
+    const clipGrid = document.getElementById('clipGrid');
+    // 显示进度条和占位
+    progressBar.style.display = 'block';
+    progressFill.style.width = '0%';
+    generatedClips.style.display = 'block';
+    clipGrid.innerHTML = '';
+    selectedClipIndex = null;
+    for(let i=0;i<4;i++){
+      clipGrid.innerHTML += `<div class='clip-video-thumb' data-clip='${i}' style='aspect-ratio:1.6;background:#e0e7ff;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;'></div>`;
+    }
+    setTimeout(() => {
+      progressFill.style.width = '100%';
+    }, 50);
+    setTimeout(() => {
+      clipGrid.innerHTML = '';
+      const shotNum = currentClipShotIndex + 1;
+      for(let i=1;i<=4;i++){
+        clipGrid.innerHTML += `<div class='clip-video-thumb' data-clip='${i-1}' onclick='selectClipVideo(this)' style='aspect-ratio:1.6;background:#e0e7ff;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;'><video src='video/shot${shotNum}-${i}.mp4' controls style='width:100%;height:100%;border-radius:12px;background:#000;'></video></div>`;
+      }
+      progressBar.style.display = 'none';
+    }, 2000);
+  }
+  function selectClipVideo(el) {
+    document.querySelectorAll('.clip-video-thumb').forEach(e => e.style.boxShadow = 'none');
+    el.style.boxShadow = '0 0 0 3px #6a82fb';
+    selectedClipIndex = parseInt(el.getAttribute('data-clip'));
+  }
+  document.getElementById('clipSubmitBtn').onclick = function() {
+    // 只要选了clip就给当前镜头打勾
+    if(selectedClipIndex === null) { alert('请先选择一个Clip视频'); return; }
+    const shotThumbs = document.querySelectorAll('.clip-shot-thumb');
+    const selected = shotThumbs[currentClipShotIndex];
+    if (!selected) { alert('请先选择一个镜头'); return; }
     let check = selected.querySelector('.shot-check');
     if (!check) {
       check = document.createElement('span');
