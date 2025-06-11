@@ -579,6 +579,27 @@
       selectClipShot(document.querySelector('.clip-shot-thumb[data-index="0"]'));
     });
 
+    // 在selectShot函数前插入shotPrompts定义
+    const shotPrompts = [
+      '画面中，一位时尚女孩站在赛场边的角落，她身着时尚潮流的运动套装，背着一个小巧精致的背包。女孩神情兴奋，眼神中满是对比赛的期待。她从背包里拿出一瓶雅诗兰黛香水，轻轻拧开瓶盖，在手腕和脖颈处喷洒。那香水的液体晶莹剔透，喷洒出来的瞬间，细腻的雾状芬芳飘散在空气中，女孩闭上眼睛，享受着这迷人的香气。',
+      '女孩比赛结束后，带着满足的笑容走进咖啡馆，找了个靠窗的位置坐下，点了一杯咖啡。不一会儿，一位活力男孩也走进了咖啡馆，他穿着印有球队标志的球衣，脸上洋溢着对足球的热情。男孩环顾四周，准备找个空位，这时，女孩身上雅诗兰黛香水的独特气息飘进了他的鼻子，他的目光不由自主地落在了女孩身上。',
+      '男孩鼓起勇气走到女孩桌前，礼貌地询问是否可以坐下，女孩微笑着点头。两人开始聊起刚刚结束的比赛，越聊越投机，他们的眼神中都闪烁着光芒。此时，雅诗兰黛香水的芬芳在他们周围轻轻弥漫，仿佛为这个温馨的场景增添了一层浪漫的薄纱。桌上的咖啡冒着热气，与香水的香气交织在一起。',
+      '正当两人聊得火热时，女孩的手机突然响起，她接起电话后，脸色变得有些担忧。原来家里有急事需要她马上回去。女孩抱歉地看着男孩，准备起身离开。男孩有些失落，眼神中流露出不舍。此时，窗外的大雨仿佛也在为这可能的分别增添了一丝忧伤的氛围，而雅诗兰黛香水的味道也似乎变得有些苦涩。',
+      '女孩起身准备离开，男孩着急地拉住她的手，大声说："等雨停了再走吧。"女孩停下脚步，看着男孩真诚的眼神，心中一阵感动。两人站在门口，雨水在他们身边飞溅，而雅诗兰黛香水的芬芳在雨中更加浓郁。他们四目相对，气氛变得暧昧而浪漫。',
+      '男孩和女孩手牵手走出咖啡馆，街道两旁的花朵在雨后显得格外娇艳。他们漫步在街道上，脸上都洋溢着幸福的笑容。雅诗兰黛香水的味道在他们身边萦绕，仿佛是他们爱情的见证。阳光洒在他们身上，形成了一幅美丽的画面。',
+      '画面中，男孩和女孩的身影渐渐模糊，只剩下那瓶雅诗兰黛香水清晰地呈现在画面中央。香水在阳光下闪烁着光芒，旁边出现一行字幕："雅诗兰黛香水，见证2026世界杯的浪漫爱情。"'
+    ];
+
+    function selectShot(element) {
+      // 选中高亮
+      document.querySelectorAll('.shot-thumb').forEach(e => e.style.boxShadow = 'none');
+      element.style.boxShadow = '0 0 0 3px #6a82fb';
+      // 获取索引并显示提示词
+      const idx = parseInt(element.getAttribute('data-index'));
+      currentShotIndex = idx;
+      document.getElementById('promptText').value = shotPrompts[idx] || '';
+    }
+
     function generateImages() {
       const progressBar = document.getElementById('progressBar');
       const progressFill = document.getElementById('progressFill');
@@ -613,40 +634,6 @@
       }
       document.getElementById('shotsInner').style.transform = `translateX(-${shotScrollIndex * 284}px)`;
     }
-    function selectShot(element) {
-      // 选中高亮
-      document.querySelectorAll('.shot-thumb').forEach(e => e.style.boxShadow = 'none');
-      element.style.boxShadow = '0 0 0 3px #6a82fb';
-      // 获取索引并显示提示词
-      const idx = parseInt(element.getAttribute('data-index'));
-      currentShotIndex = idx;
-      document.getElementById('promptText').value = shotPrompts[idx] || '';
-    }
-    function generateImages() {
-      const progressBar = document.getElementById('progressBar');
-      const progressFill = document.getElementById('progressFill');
-      const generatedImages = document.getElementById('generatedImages');
-      const genImgGrid = document.getElementById('genImgGrid');
-      progressBar.style.display = 'block';
-      progressFill.style.width = '0%';
-      generatedImages.style.display = 'block';
-      genImgGrid.innerHTML = '';
-      for(let i=0;i<4;i++){
-        genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;position:relative;overflow:hidden;cursor:pointer;' onclick='selectGeneratedImage(this, event)'></div>`;
-      }
-      setTimeout(() => {
-        progressFill.style.width = '100%';
-      }, 50);
-      setTimeout(() => {
-        genImgGrid.innerHTML = '';
-        const shotNum = currentShotIndex + 1;
-        for(let i=1;i<=4;i++){
-          genImgGrid.innerHTML += `<div style='aspect-ratio:1;background:#e0e7ff;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;' onclick='selectGeneratedImage(this, event)'><img src='img/shot${shotNum}-${i}.jpeg' style='width:100%;height:100%;object-fit:cover;border-radius:12px;'></div>`;
-        }
-        progressBar.style.display = 'none';
-      }, 2000);
-    }
-    // 删除重复的lastImgToolbar声明
     function selectGeneratedImage(element, event) {
       // 移除上一个工具栏
       if(lastImgToolbar) lastImgToolbar.remove();
