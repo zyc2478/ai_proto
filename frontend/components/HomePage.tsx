@@ -13,19 +13,19 @@ const breakpointColumnsObj = {
 export default function HomePage() {
   return (
     <Box w="100%" px={{ base: 2, md: 8 }} py={8}>
-      {/* 顶部横幅 Banner 区域 */}
+      {/* 顶部横幅 Banner 区域，底色为 #e0e7ff，主色调文字按钮 */}
       <Box
-        bgGradient="linear(90deg, #6a82fb 0%, #fc5c7d 100%)"
+        bg="#e0e7ff"
         py={10}
         px={8}
         textAlign="center"
         borderRadius="16px"
-        color="white"
+        color="#6a82fb"
         mb={8}
-        boxShadow="0 8px 32px 0 rgba(106,130,251,0.18)"
+        boxShadow="0 8px 32px 0 rgba(106,130,251,0.10)"
       >
         <Text fontSize="2xl" fontWeight="bold" mb={3}>释放你的创意，AI驱动视频创作</Text>
-        <Button size="lg" colorScheme="messenger" bg="#6a82fb">立即体验</Button>
+        <Button size="lg" colorScheme="messenger" bg="#6a82fb" color="white">立即体验</Button>
       </Box>
       {/* Masonry 瀑布流区域为白色半透明背景、圆角18px、阴影较浅 */}
       <Box

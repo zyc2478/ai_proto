@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Box, Button, Flex, Text, Textarea, VStack, Progress, Image, SimpleGrid } from "@chakra-ui/react";
+import { FLIXOR_MAIN_COLOR } from "./Sidebar";
 
 const defaultStory =
   "2026世界杯期间，时尚女孩身着潮流衣装，在赛场边精心喷上雅诗兰黛香水，那迷人芬芳瞬间飘散。赛后她走进赛场周边咖啡馆休息，活力男孩也因对足球的热爱踏入这里。女孩身上雅诗兰黛香水的独特气息吸引了男孩，两人因足球话题相谈甚欢。香水的芬芳在空气中弥漫，仿佛为这段相遇增添了浪漫滤镜。此后，他们的爱情如世界杯的热情般炽热甜蜜，雅诗兰黛香水见证了这段美好缘分。";
@@ -77,10 +78,13 @@ export default function StoryboardPage({ onNext }: Props) {
   };
 
   return (
-    <Box maxW="900px" mx="auto" mt={12} bg="whiteAlpha.900" borderRadius="18px" boxShadow="0 8px 32px 0 rgba(106,130,251,0.10)" p={{ base: 4, md: 12 }}>
+    <Box w="100%" maxW="100vw" mx="auto" mt={0} bg="white" borderRadius="0" boxShadow="0 4px 24px 0 rgba(106,130,251,0.08)" p={{ base: 2, md: 10 }}>
       <Flex justify="space-between" align="center" mb={6}>
         <Text fontSize="2xl" fontWeight="bold">生成StoryBoard</Text>
-        <Button colorScheme="gray" variant="outline" size="sm">导入StoryBoard</Button>
+        <Flex gap={3}>
+          <Button bg={FLIXOR_MAIN_COLOR} color="white" _hover={{ bg: '#5a6eea' }} size="sm">导入StoryBoard</Button>
+          <Button colorScheme="messenger" variant="solid" size="sm" color="white">导入StoryBoard</Button>
+        </Flex>
       </Flex>
       <Box mb={6}>
         <Text mb={2} color="#6a82fb" fontWeight={500}>品牌Story</Text>
@@ -112,9 +116,9 @@ export default function StoryboardPage({ onNext }: Props) {
               <Flex key={i} align="center" justify="space-between" gap={4}>
                 <Text flexShrink={0} color="#6a82fb" fontWeight={600} fontSize="lg" minW="70px">{shot.title}</Text>
                 <Text flex={1} maxW="32%" px={4}>{shot.desc}</Text>
-                <Flex flex={1.5} gap={4}>
+                <Flex flex={1.5} gap={4} w="100%">
                   {shot.imgs.map((src, j) => (
-                    <Image key={j} src={src} borderRadius="12px" w="48%" h="180px" objectFit="cover" />
+                    <Image key={j} src={src} borderRadius="12px" w={`${100 / shot.imgs.length - 2}%`} h="180px" objectFit="cover" />
                   ))}
                 </Flex>
               </Flex>

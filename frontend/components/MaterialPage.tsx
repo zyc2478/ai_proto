@@ -1,7 +1,6 @@
 import { useState } from "react";
-import {
-  Box, Button, Flex, Text, Textarea, Image, Grid, Progress, VStack
-} from "@chakra-ui/react";
+import { Box, Button, Flex, Text, Textarea, VStack, Progress, Image, Grid } from "@chakra-ui/react";
+import { FLIXOR_MAIN_COLOR } from "./Sidebar";
 
 const shotPrompts = [
   "画面中，一位时尚女孩站在赛场边的角落，她身着时尚潮流的运动套装，背着一个小巧精致的背包。女孩神情兴奋，眼神中满是对比赛的期待。她从背包里拿出一瓶雅诗兰黛香水，轻轻拧开瓶盖，在手腕和脖颈处喷洒。那香水的液体晶莹剔透，喷洒出来的瞬间，细腻的雾状芬芳飘散在空气中，女孩闭上眼睛，享受着这迷人的香气。",
@@ -18,6 +17,12 @@ const shotImgs = [
   "/img/5-1.jpeg", "/img/6-1.jpeg", "/img/7-1.jpeg"
 ];
 
+const menuList = [
+  { key: "txt2img", label: "文生图" },
+  { key: "img2img", label: "图生图" },
+  { key: "edit", label: "图像编辑" },
+];
+
 interface Props {
   onNext: () => void;
 }
@@ -28,6 +33,7 @@ export default function MaterialPage({ onNext }: Props) {
   const [genLoading, setGenLoading] = useState(false);
   const [genImgs, setGenImgs] = useState<string[]>([]);
   const [progress, setProgress] = useState(0);
+  const [menu, setMenu] = useState("txt2img");
 
   // 镜头选择
   const handleSelectShot = (idx: number) => {
@@ -48,7 +54,6 @@ export default function MaterialPage({ onNext }: Props) {
         prog = 100;
         clearInterval(timer);
         setGenLoading(false);
-        // 假设每个镜头有4张图
         setGenImgs([
           `/img/shot${currentShot + 1}-1.jpeg`,
           `/img/shot${currentShot + 1}-2.jpeg`,
@@ -61,12 +66,8 @@ export default function MaterialPage({ onNext }: Props) {
   };
 
   return (
-    <Box maxW="1100px" mx="auto" mt={12} bg="whiteAlpha.900" borderRadius="18px" boxShadow="0 8px 32px 0 rgba(106,130,251,0.10)" p={{ base: 4, md: 12 }}>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Text fontSize="2xl" fontWeight="bold">选择/生成图像</Text>
-        <Button colorScheme="gray" variant="outline" size="sm">返回</Button>
-      </Flex>
-      {/* 镜头选择 */}
+    <Box w="100%" maxW="100vw" mx="auto" mt={0} bg="white" borderRadius="0" boxShadow="0 4px 24px 0 rgba(106,130,251,0.08)" p={{ base: 2, md: 10 }}>
+      {/* 顶部镜头选择 */}
       <Flex gap={4} mb={8} overflowX="auto">
         {shotImgs.map((src, idx) => (
           <Box
@@ -74,40 +75,81 @@ export default function MaterialPage({ onNext }: Props) {
             border={currentShot === idx ? "3px solid #6a82fb" : "1px solid #e0e7ff"}
             borderRadius="16px"
             cursor="pointer"
-            minW="260px"
-            h="180px"
+            minW="180px"
+            h="120px"
             position="relative"
             onClick={() => handleSelectShot(idx)}
+            transition="box-shadow 0.2s"
           >
             <Image src={src} w="100%" h="100%" objectFit="cover" borderRadius="16px" />
-            <Text position="absolute" left="14px" top="14px" bg="whiteAlpha.700" borderRadius="8px" px={3} color="#333" fontWeight={500}>
+            <Text position="absolute" left="14px" top="10px" bg="whiteAlpha.700" borderRadius="8px" px={3} color="#333" fontWeight={500} fontSize="md">
               镜头{idx + 1}
             </Text>
           </Box>
         ))}
       </Flex>
-      {/* 提示词 */}
-      <Box mb={6}>
-        <Text fontWeight={600} mb={2}>生图提示词</Text>
-        <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={5} />
-      </Box>
-      {/* 生成按钮与进度条 */}
-      <VStack spacing={4} mb={6}>
-        <Button colorScheme="messenger" w="full" onClick={handleGen} isLoading={genLoading}>生成图像</Button>
-        {genLoading && <Progress w="full" value={progress} size="sm" colorScheme="messenger" borderRadius={2} />}
-      </VStack>
-      {/* 生成的图片 */}
-      {genImgs.length > 0 && (
-        <Box mb={6}>
-          <Text fontWeight={600} mb={2}>生成的图像</Text>
-          <Grid templateColumns={{ base: "repeat(2,1fr)", md: "repeat(4,1fr)" }} gap={4}>
-            {genImgs.map((src, i) => (
-              <Image key={i} src={src} borderRadius="12px" w="100%" h="180px" objectFit="cover" />
-            ))}
-          </Grid>
+      {/* 主体区域：左右分栏 */}
+      <Flex bg="white" borderRadius="18px" boxShadow="0 8px 32px 0 rgba(106,130,251,0.10)" minH="480px" overflow="hidden">
+        {/* 左侧菜单 */}
+        <VStack align="stretch" w="160px" minW="120px" bg="whiteAlpha.900" borderRight="1.5px solid #e0e7ff" py={6} spacing={2}>
+          {menuList.map(item => (
+            <Button
+              key={item.key}
+              variant={menu === item.key ? "solid" : "ghost"}
+              bg={menu === item.key ? FLIXOR_MAIN_COLOR : "transparent"}
+              color={menu === item.key ? "white" : "#6a82fb"}
+              _hover={{ bg: menu === item.key ? '#5a6eea' : '#f3f4f6' }}
+              borderRadius="8px"
+              fontWeight={600}
+              fontSize="md"
+              px={2}
+              py={5}
+              onClick={() => setMenu(item.key)}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </VStack>
+        {/* 右侧内容区 */}
+        <Box flex={1} p={{ base: 4, md: 10 }}>
+          {/* 文生图 */}
+          {menu === "txt2img" && (
+            <>
+              <Text fontWeight={600} mb={2} fontSize="lg">生图提示词</Text>
+              <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={5} mb={6} borderColor="#e0e7ff" borderRadius="10px" fontSize="md" />
+              <VStack spacing={4} mb={6} align="stretch">
+                <Button bg={FLIXOR_MAIN_COLOR} color="white" w="full" onClick={handleGen} isLoading={genLoading} _hover={{ bg: '#5a6eea' }} fontSize="lg" py={6} borderRadius="10px">生成图像</Button>
+                {genLoading && <Progress w="full" value={progress} size="sm" colorScheme="messenger" borderRadius={2} />}
+              </VStack>
+              {genImgs.length > 0 && (
+                <Box mb={6}>
+                  <Text fontWeight={600} mb={2}>生成的图像</Text>
+                  <Grid templateColumns={{ base: "repeat(2,1fr)", md: "repeat(4,1fr)" }} gap={4}>
+                    {genImgs.map((src, i) => (
+                      <Image key={i} src={src} borderRadius="12px" w="100%" h="180px" objectFit="cover" />
+                    ))}
+                  </Grid>
+                </Box>
+              )}
+            </>
+          )}
+          {/* 图生图 */}
+          {menu === "img2img" && (
+            <Box>
+              <Text fontWeight={600} mb={2} fontSize="lg">图生图（占位）</Text>
+              <Box bg="#f3f4f6" borderRadius="10px" p={8} color="#b3b8d0">此处可扩展为上传图片+提示词的生图功能</Box>
+            </Box>
+          )}
+          {/* 图像编辑 */}
+          {menu === "edit" && (
+            <Box>
+              <Text fontWeight={600} mb={2} fontSize="lg">图像编辑（占位）</Text>
+              <Box bg="#f3f4f6" borderRadius="10px" p={8} color="#b3b8d0">此处可扩展为局部修复、涂抹、换脸等编辑功能</Box>
+            </Box>
+          )}
         </Box>
-      )}
-      <Button colorScheme="messenger" size="lg" w="full" mt={6} onClick={onNext}>下一步：生成Clip短片</Button>
+      </Flex>
+      <Button bg={FLIXOR_MAIN_COLOR} color="white" size="lg" w="full" mt={8} _hover={{ bg: '#5a6eea' }} onClick={onNext}>下一步：生成Clip短片</Button>
     </Box>
   );
 } 
